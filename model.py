@@ -1,10 +1,25 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+import configparser
+import os
+
+# 读取配置文件
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+models_dir = config.get('config', 'models_dir', fallback='/usr/models')
+
 class CodeGenerator:
     def __init__(self, model = 'Salesforce/codegen-2B-mono'):
         print("加载模型")
-        self.tokenizer = AutoTokenizer.from_pretrained(model, cache_dir='./config', local_files_only=False)
-        self.model = AutoModelForCausalLM.from_pretrained(model, cache_dir='./models', local_files_only=False)
+
+        model_dir = os.path.join(models_dir, model)
+        config = os.path.join(model_dir, 'config')
+        models = os.path.join(model_dir, 'models')
+        print(config, models)
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model, cache_dir=config, local_files_only=False)
+        self.model = AutoModelForCausalLM.from_pretrained(model, cache_dir=models, local_files_only=False)
 
     def predict(self, text, max_length = 5, max_token_length = 2048):
         print('进行补全', text)
