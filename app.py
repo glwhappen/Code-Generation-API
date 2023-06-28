@@ -3,7 +3,7 @@ from model import CodeGenerator
 
 app = Flask(__name__)
 # Use a global variable to store the model so it's not loaded every time.
-generator = None 
+generator = {} 
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -17,11 +17,16 @@ def predict():
         return jsonify({'error': 'Missing or invalid "max_length" field.'}), 400
     if 'max_token_length' not in data or not isinstance(data['max_token_length'], int) or data['max_token_length'] < 1:
         return jsonify({'error': 'Missing or invalid "max_token_length" field.'}), 400
+    model = ''
+    if 'model' not in data:
+        model = 'Salesforce/codegen-2B-mono'
+    else:
+        model = data['model']
 
     # If the model hasn't been loaded yet, load it now.
-    if generator is None:
+    if model not in generator:
         print("Loading model...")
-        generator = CodeGenerator()
+        generator[model] = CodeGenerator(model)
         print("Loading model end")
 
     text = data['text']
@@ -32,12 +37,12 @@ def predict():
     import time
     start_time = time.time()
 
-    generator_res = generator.predict(text, max_length, max_token_length)
+    generator_res = generator[model].predict(text, max_length, max_token_length)
 
     elapsed_time = time.time() - start_time
     print(f"Prediction took {elapsed_time} seconds.")
 
-    return jsonify({'prediction': generator_res['prediction'], 'use_time': elapsed_time, 'text': generator_res['text']})
+    return jsonify({'prediction': generator_res['prediction'], 'use_time': elapsed_time, 'text': generator_res['text'], 'model': model})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8088, debug=True)
