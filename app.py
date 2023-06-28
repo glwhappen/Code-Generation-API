@@ -15,6 +15,8 @@ def predict():
         return jsonify({'error': 'Missing or invalid "text" field.'}), 400
     if 'max_length' not in data or not isinstance(data['max_length'], int) or data['max_length'] < 1:
         return jsonify({'error': 'Missing or invalid "max_length" field.'}), 400
+    if 'max_token_length' not in data or not isinstance(data['max_token_length'], int) or data['max_token_length'] < 1:
+        return jsonify({'error': 'Missing or invalid "max_token_length" field.'}), 400
 
     # If the model hasn't been loaded yet, load it now.
     if generator is None:
@@ -24,17 +26,18 @@ def predict():
 
     text = data['text']
     max_length = data['max_length']
+    max_token_length = data['max_token_length']
 
     # Model performance monitoring
     import time
     start_time = time.time()
 
-    prediction = generator.predict(text, max_length)
+    generator_res = generator.predict(text, max_length, max_token_length)
 
     elapsed_time = time.time() - start_time
     print(f"Prediction took {elapsed_time} seconds.")
 
-    return jsonify({'prediction': prediction, 'use_time': elapsed_time})
+    return jsonify({'prediction': generator_res['prediction'], 'use_time': elapsed_time, 'text': generator_res['text']})
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8088, debug=True)
